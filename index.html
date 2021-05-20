@@ -1,0 +1,169 @@
+<html>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"/> <!--320-->
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta property="og:image" content="thumbnail.gif" />
+        <title>one a day</title>
+        <style>
+            body{
+                margin: 0;
+            }
+        </style>
+    </head>
+    <body>
+        <script src="./libs/ccapture/CCapture.all.min.js"></script>
+        <script src="./debugger.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.3.1/p5.js"></script>
+        <script>
+let canvas;
+let recorder;
+
+let capturer = new window.CCapture( { 
+    name: 'render',
+    format: 'gif', 
+    workersPath: 'libs/ccapture/' 
+});
+
+const debugging = new URLSearchParams(window.location.search).get('debug');
+if (debugging !== null) {
+    debug = new DebugUI();
+    debug.recordBtn.addEventListener('click', () => handleRecordBtnClick())
+    debug.formatSelect.addEventListener('change', () => handleFormatSelectChange())
+}
+
+handleRecordBtnClick = function () {
+    if (debug.formatSelect.value == 'thumbnail') {
+        saveThumbnail(renderer.canvas);
+    } else {
+        frameCount = 0;
+        recording = true;
+        capturer.start();
+    }
+}
+
+handleFormatSelectChange = function () {
+
+}
+
+handleComplete = function () {
+    recording = false;
+    capturer.stop();
+    capturer.save();    
+}
+
+checkForRecording = function () {
+  if (debugging !== null) {
+    if (recording) {
+      capturer.capture(canvas.elt);
+      if (frameDelta == 0) {
+        handleComplete();
+      }
+    }
+
+    if (!recordingStarted && !recording) {
+      if (frameDelta == 0) {
+        recordingStarted = true;
+        recording = true;
+        capturer.start();
+        capturer.capture(canvas.elt);
+      }
+    }
+  }
+}
+
+/// BEGIN SKETCH
+const colors = ["#496A81", "#66999B", "#B3AF8F", "#FFC482"];
+const backgroundColor = "#ffffff";
+const width = 600;
+const height = 600;
+const totalFrames = 1000;
+let frameCount = 0;
+let recording = false;
+let recordingStarted = false;
+let frameDelta = 0;
+
+let c01 = (g) => {
+  return constrain(g, 0, 1);
+};
+
+let ease = (p) => {
+  p = c01(p);
+  return 3 * p * p - 2 * p * p * p;
+};
+
+function easeInQuint(x) {
+  return x * x * x * x * x;
+}
+
+function easeOutQuart(x) {
+  return 1 - pow(1 - x, 4);
+}
+
+function easeOutExpo(x) {
+  return x === 1 ? 1 : 1 - pow(2, -10 * x);
+}
+
+function setup() {
+  canvas = createCanvas(width, height);
+  noiseSeed(20);
+  let bg = color(backgroundColor);
+  background(bg);
+}
+
+let _w = window.innerWidth;
+let _h = window.innerHeight;
+
+function draw() {
+  frameCount += 2;
+  frameDelta = (2 * Math.PI * (frameCount % totalFrames)) / totalFrames;
+
+  colorMode(RGB);
+
+  let bg = color(backgroundColor);
+  //bg.setAlpha(30);
+  background(bg);
+
+  colorMode(HSB);
+
+  push();
+
+  let x = 0;
+  let y = 0;
+  let w = x + _w;
+  let h = y + _h;
+  let n = 0;
+  let gap = 10;
+  let count = (w * h) / gap;
+
+  for (let j = x; j < w; j += gap) {
+    for (let i = y; i < h; i += gap) {
+      n++;
+      s = HALF_PI + sin(i) * PI;
+      let angle = (2 * PI * n) / count;
+      //let pct = angle + sin(frameDelta) / PI;
+      let pct = 0.5 + sin(frameDelta + i) * 0.5; 
+      
+      pct += cos(frameDelta + j) * 2; 
+
+      let hue = (pct * 360) % 360; //color rotates
+      
+
+      beginShape();
+
+      noFill();
+      stroke(hue, 255, 255, 255);
+      vertex(i + 1, j);
+      vertex(i + gap, j);
+
+      endShape();
+    }
+  }
+  pop();
+
+  checkForRecording();
+}
+
+        </script>
+    </body>
+</html>
